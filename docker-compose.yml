@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm start
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/opt/app
+  db:
+    image: mysql
+    restart: always
+    environment:
+       MYSQL_ROOT_PASSWORD: changeme
+       MYSQL_DATABASE: "ovidem_blocks"
+       MYSQL_USER: "ovidem_be"
+       MYSQL_PASSWORD: "x7A-6Ju-w7x-HrP"
+    ports:
+      - "3306:3306"

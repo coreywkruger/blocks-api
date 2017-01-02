@@ -1,0 +1,24 @@
+{
+  "name": "blocks-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "PORT=8888 node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/coreywkruger/blocks-api.git"
+  },
+  "author": "Corey Kruger",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/coreywkruger/blocks-api/issues"
+  },
+  "homepage": "https://github.com/coreywkruger/blocks-api#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0"
+  }
+}
