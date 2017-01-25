@@ -1,0 +1,8 @@
+{
+  "api": {
+    "port": "8888"
+  },
+  "db": {
+    "connection": "postgres://db:db@db:5432/blocks"
+  }
+}
