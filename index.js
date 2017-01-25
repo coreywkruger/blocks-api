@@ -1,9 +1,9 @@
 var app = require('./src/app.js');
-var PORT = process.env.PORT;
+var config = require('./config/config.json');
 
-app.start(PORT, function(err){
+app.start(config, function(err){
   if(err){
     console.log(err);
   }
-  console.log('Magic happens on port ' + PORT);
+  console.log('Magic happens on port ' + config.api.port);
 });

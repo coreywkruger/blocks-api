@@ -10,13 +10,14 @@ services:
       - "8888:8888"
     volumes:
       - .:/opt/app
+    links:
+      - db
   db:
-    image: mysql
+    image: postgres
     restart: always
     environment:
-       MYSQL_ROOT_PASSWORD: changeme
-       MYSQL_DATABASE: "ovidem_blocks"
-       MYSQL_USER: "ovidem_be"
-       MYSQL_PASSWORD: "x7A-6Ju-w7x-HrP"
+      POSTGRES_PASSWORD: "db"
+      POSTGRES_USER: "db"
+      POSTGRES_DB: "blocks"
     ports:
-      - "3306:3306"
+      - "5432:5432"
