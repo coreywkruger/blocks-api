@@ -1,9 +1,21 @@
-var app = require('./src/app.js');
-var config = require('./config/config.json');
+var app = require('./app.js');
+var db = require('./db.js');
+var configLoader = require('./lib/config');
 
-app.start(config, function(err){
-  if(err){
-    console.log(err);
-  }
-  console.log('Magic happens on port ' + config.api.port);
-});
+(function(configLocation){
+  // load config
+  configLoader(configLocation, function(err, config){
+    if(err){
+      console.log('failed start');
+      console.log(err);
+      process.exit(1);
+    }
+    app.start(config, function(err){
+      if(err){
+        console.log('failed start');
+        console.log(err);
+        process.exit(1);
+      }
+    });
+  });
+})(process.env.CONFIG);

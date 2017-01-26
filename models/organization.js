@@ -1,3 +1,5 @@
+const uuid = require('node-uuid');
+
 const initialize = function(sequelize, db){
   return db.define('organization', {
     id: {
@@ -9,7 +11,13 @@ const initialize = function(sequelize, db){
     }
   }, {
     tableName: 'organizations',
-    timestamps: false
+    timestamps: false,
+    hooks: {
+      beforeCreate: function(organization, options, done){
+        organization.id = uuid.v4();
+        done();
+      }
+    }
   });
 };
 

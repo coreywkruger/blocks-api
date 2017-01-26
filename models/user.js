@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const async = require('async');
-const uuid = require('uuid');
+const uuid = require('node-uuid');
 
 const initialize = function(sequelize, db){
   return db.define('user', {
