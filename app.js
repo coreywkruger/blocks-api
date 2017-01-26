@@ -30,28 +30,28 @@ function start(config, cb){
       controllers.user.get(models, req, res);
     });
 
-    router.get('/users/template/:id', function(req, res){
-      res.json({messagee: '/users/template/:id'})
-    });
-
     router.post('/templates', function(req, res){
-      res.json({messagee: '/templates'})
+      controllers.template.create(models, req, res);
     });
 
     router.get('/templates', function(req, res){
-      res.json({messagee: '/templates'})
+      controllers.template.list(models, req, res);
     });
 
     router.get('/templates/:id', function(req, res){
-      res.json({messagee: '/templates/:id'})
+      controllers.template.get(models, req, res);
+    });
+
+    router.get('/templates/:id/users', function(req, res){
+      controllers.template.users(models, req, res);
     });
 
     router.put('/templates/:id', function(req, res){
-      res.json({messagee: '/templates/:id'})
+      controllers.template.update(models, req, res);
     });
 
     router.delete('/templates/:id', function(req, res){
-      res.json({messagee: '/templates/:id'})
+      controllers.template.delete(models, req, res);
     });
 
     var app = express();
@@ -72,7 +72,10 @@ function start(config, cb){
     });
     app.use(function(req, res, next){
       // authenticate
-      req.session = {};
+      req.session = {
+        user_id: '123',
+        organization_id: '123'
+      };
       next();
     });
     app.use(authorizer({

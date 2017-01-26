@@ -4,9 +4,13 @@ const bcrypt = require('bcrypt');
 const validation = require('../lib/validation');
 
 module.exports = {
+
   login: function(db, req, res){
 
-    var args = _.pick(req.body, ['email', 'password']);
+    var args = _.pick(req.body, [
+      'email', 
+      'password'
+    ]);
 
     db.user.connection
       .findOne({
