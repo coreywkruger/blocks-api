@@ -11,6 +11,7 @@ function init(connection, cb){
       connection: models[key].initialize(sequelize, db),
       model: models[key].model
     };
+    collection.sequelize = db;
   }
   db.sync({ force: true })
     .then(function(err){

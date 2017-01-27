@@ -2,6 +2,7 @@ const express       = require('express');
 const bodyParser    = require('body-parser');
 const authorizer    = require('./lib/auth.js');
 const db            = require('./db.js');
+const uuid          = require('node-uuid');
 const controllers   = require('./controllers');
 
 function start(config, cb){
@@ -71,10 +72,16 @@ function start(config, cb){
       }
     });
     app.use(function(req, res, next){
+      console.log(req.method, req.hostname, req.path);
+      next();
+    });
+    var user_id = uuid.v4();
+    var organization_id = uuid.v4();
+    app.use(function(req, res, next){
       // authenticate
       req.session = {
-        user_id: '123',
-        organization_id: '123'
+        user_id: user_id,
+        organization_id: organization_id
       };
       next();
     });

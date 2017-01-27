@@ -3,13 +3,14 @@ const _ = require('lodash');
 const validation = require('../lib/validation');
 
 module.exports = {
-  
+
   create: function(db, req, res){
 
     var args = _.pick(req.body, ['name']);
 
     db.organization.connection
       .create({
+        id: req.session.organization_id,
         name: args.name
       })
       .then(function(organization){

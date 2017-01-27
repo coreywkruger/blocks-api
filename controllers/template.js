@@ -32,8 +32,10 @@ module.exports = {
 
   list: function(db, req, res){
     db.template.connection
-      .find({
-        organization_id: req.session.organization_id,
+      .findAll({
+        where: {
+          organization_id: req.session.organization_id
+        }
       })
       .then(function(recs){
         recs.forEach(function(rec){
@@ -53,16 +55,21 @@ module.exports = {
   get: function(db, req, res){
     db.template.connection
       .findOne({
-        organization_id: req.session.organization_id,
-        id: req.params.id
+        where: {
+          organization_id: req.session.organization_id,
+          id: req.params.id
+        }
       })
-      .then(function(recs){
-        recs.forEach(function(rec){
-          (new validation(rec.get({
-            plain: true
-          }), db.template.model)).sanitize();
-        });
-        res.json(recs);
+      .then(function(rec){
+        if(rec === null){
+          return res.status(404).send({
+            errors: ['Not Found']
+          });
+        }
+        var response = new validation(rec.get({
+          plain: true
+        }), db.template.model);
+        res.json(response.sanitize());
       })
       .catch(function(err){
         res.status(500).send({
@@ -78,7 +85,7 @@ module.exports = {
       'name'
     ]);
 
-    db.template.connection
+    db.sequelize
       .query(`
       UPDATE templates as t 
         SET 
@@ -114,8 +121,10 @@ module.exports = {
     
     db.template.connection
       .findOne({
-        organization_id: req.session.organization_id,
-        id: req.params.id
+        where: {
+          organization_id: req.session.organization_id,
+          id: req.params.id
+        }
       })
       .then(function(rec){
         return req.authorizer.getOwners(rec.id).then(function(users){

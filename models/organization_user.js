@@ -1,5 +1,5 @@
 const initialize = function(sequelize, db){
-  var organizationUser = db.define('organization_user', {
+  return db.define('organization_user', {
     id: {
       type: sequelize.UUID,
       primaryKey: true

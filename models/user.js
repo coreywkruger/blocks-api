@@ -17,28 +17,36 @@ const initialize = function(sequelize, db){
     },
     name: {
       type: sequelize.STRING
+    },
+    created_at: {
+      type: sequelize.BIGINT
+    },
+    updated_at: {
+      type: sequelize.BIGINT
     }
   }, {
     tableName: 'users',
     timestamps: false,
     hooks: {
+      beforeUpdate: function(user, options, done){
+        user.updated_at = Date.now();
+        done();
+      },
       beforeCreate: function(user, options, done){
-        async.waterfall([
-          function(next){
-            user.id = uuid.v4();
-            next();
-          },
-          function(next){
-            if(user.password_hash){
-              bcrypt.hash(user.password_hash, 10, function(err, hash){
-                if(err){
-                  return next(err);
-                }
-                user.password_hash = hash;
-                next();
-              });
+        user.id = uuid.v4();
+        user.created_at = Date.now();
+        user.updated_at = Date.now();
+        if(user.password_hash){
+          bcrypt.hash(user.password_hash, 10, function(err, hash){
+            if(err){
+              return done(err);
             }
-        }], done);
+            user.password_hash = hash;
+            done();
+          });
+        } else {
+          done();
+        }
       }
     }
   });
@@ -58,6 +66,14 @@ const model = {
     public: false
   },
   name: {
+    required: false,
+    public: true
+  },
+  created_at: {
+    required: false,
+    public: true
+  },
+  updated_at: {
     required: false,
     public: true
   }

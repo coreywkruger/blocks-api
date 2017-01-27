@@ -14,6 +14,7 @@ module.exports = {
 
     db.user.connection
       .create({
+        id: uuid.v4(),
         email: args.email,
         name: args.name,
         password_hash: args.password
@@ -34,11 +35,18 @@ module.exports = {
   get: function(db, req, res){
     
     db.user.connection
-      .find({
-        organization_id: req.session.organization_id,
-        id: req.params.id
+      .findOne({
+        where: {
+          organization_id: req.session.organization_id,
+          id: req.params.id
+        }
       })
       .then(function(rec){
+        if(rec === null){
+          return res.status(404).send({
+            errors: ['Not Found']
+          });
+        }
         var response = new validation(rec.get({
           plain: true
         }), db.user.model);
@@ -54,8 +62,10 @@ module.exports = {
   list: function(db, req, res){
     if(req.authorizer.isAllowed('read')){
       db.user.connection
-        .find({
-          organization_id: req.session.organization_id,
+        .findAll({
+          where: {
+            organization_id: req.session.organization_id,
+          }
         })
         .then(function(recs){
           recs.forEach(function(rec){
