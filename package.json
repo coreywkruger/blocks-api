@@ -28,6 +28,7 @@
     "nodemailer": "^2.7.0",
     "pg": "^6.1.2",
     "sequelize": "^3.30.0",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "blocks-permissions": "git+https://github.com/coreywkruger/blocks-permissions.git#master"
   }
 }

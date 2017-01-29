@@ -1,0 +1,1 @@
+INSERT INTO roles (id, owner_id, owner_type, name, active) VALUES ('3ea441fa-0e32-4301-bd96-f32e31de09b3', '', 'system', 'Admin', TRUE);

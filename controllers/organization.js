@@ -6,6 +6,12 @@ module.exports = {
 
   create: function(db, req, res){
 
+    if(!req.authorizer.isAllowed('write')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     var args = _.pick(req.body, ['name']);
 
     db.organization.connection

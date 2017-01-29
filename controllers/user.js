@@ -5,6 +5,12 @@ const validation = require('../lib/validation');
 module.exports = {
 
   create: function(db, req, res){
+    
+    if(!req.authorizer.isAllowed('write')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
 
     var args = _.pick(req.body, [
       'email', 
@@ -34,6 +40,12 @@ module.exports = {
 
   get: function(db, req, res){
     
+    if(!req.authorizer.isAllowed('read')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     db.user.connection
       .findOne({
         where: {
@@ -60,30 +72,31 @@ module.exports = {
   },
 
   list: function(db, req, res){
-    if(req.authorizer.isAllowed('read')){
-      db.user.connection
-        .findAll({
-          where: {
-            organization_id: req.session.organization_id,
-          }
-        })
-        .then(function(recs){
-          recs.forEach(function(rec){
-            (new validation(rec.get({
-              plain: true
-            }), db.user.model)).sanitize();
-          });
-          res.json(recs);
-        })
-        .catch(function(err){
-          res.status(500).send({
-            errors: err.errors  
-          });
-        });
-    } else {
-      res.status(403).send({
-        errors: ['Not Authorized']
-      });
+
+    if(!req.authorizer.isAllowed('read')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
     }
+
+    db.user.connection
+      .findAll({
+        where: {
+          organization_id: req.session.organization_id,
+        }
+      })
+      .then(function(recs){
+        recs.forEach(function(rec){
+          (new validation(rec.get({
+            plain: true
+          }), db.user.model)).sanitize();
+        });
+        res.json(recs);
+      })
+      .catch(function(err){
+        res.status(500).send({
+          errors: err.errors  
+        });
+      });
   }
 };

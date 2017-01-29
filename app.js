@@ -2,6 +2,7 @@ const express       = require('express');
 const bodyParser    = require('body-parser');
 const authorizer    = require('./lib/auth.js');
 const db            = require('./db.js');
+const permissions   = require('blocks-permissions');
 const uuid          = require('node-uuid');
 const controllers   = require('./controllers');
 
@@ -64,7 +65,7 @@ function start(config, cb){
       res.header('Access-Control-Allow-Origin', req.headers.origin);
       res.header('Access-Control-Allow-Credentials', 'true');
       res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-      res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, api-key, session-key, admin-key, Access-Control-Allow-Credentials');
+      res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Access-Control-Allow-Credentials');
       if (req.method === 'OPTIONS') {
         res.sendStatus(200);
       } else {
@@ -75,21 +76,30 @@ function start(config, cb){
       console.log(req.method, req.hostname, req.path);
       next();
     });
+
+    // hack
     var user_id = uuid.v4();
     var organization_id = uuid.v4();
     app.use(function(req, res, next){
-      // authenticate
+      // authenticate stub
       req.session = {
         user_id: user_id,
         organization_id: organization_id
       };
       next();
     });
-    app.use(authorizer({
-      getPermissionsForEntity: function(user, id, cb){
-        cb(null, ['read']);
-      }
-    }));
+    app.use(function(req, res, next){
+      permissions.initialize({
+        database: config.get('db').connection
+      }, function(err, permissionsService){
+        if(err){
+          next(err);
+        }
+        req.permissions = permissionsService;
+        next();
+      });
+    });
+    app.use(authorizer);
     app.use('/api', router);
     app.listen(config.get('api').port, cb);
   });

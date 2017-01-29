@@ -6,6 +6,12 @@ module.exports = {
 
   create: function(db, req, res){
 
+    if(!req.authorizer.isAllowed('write')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     var args = _.pick(req.body, [
       'content', 
       'name'
@@ -31,6 +37,13 @@ module.exports = {
   },
 
   list: function(db, req, res){
+
+    if(!req.authorizer.isAllowed('read')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     db.template.connection
       .findAll({
         where: {
@@ -53,6 +66,13 @@ module.exports = {
   },
 
   get: function(db, req, res){
+
+    if(!req.authorizer.isAllowed('read')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     db.template.connection
       .findOne({
         where: {
@@ -80,8 +100,20 @@ module.exports = {
 
   update: function(db, req, res){
 
+    if(!req.authorizer.isAllowed('write')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
+    if(!req.authorizer.entityOwns(req.params.id)){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     var args = _.pick(req.body, [
-      'content', 
+      'content',
       'name'
     ]);
 
@@ -117,29 +149,22 @@ module.exports = {
 
   users: function(db, req, res){
 
+    if(!req.authorizer.isAllowed('read')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
     var id = req.params.id;
     
-    db.template.connection
-      .findOne({
-        where: {
-          organization_id: req.session.organization_id,
-          id: req.params.id
-        }
-      })
-      .then(function(rec){
-        return req.authorizer.getOwners(rec.id).then(function(users){
-          users.forEach(function(rec){
-            (new validation(rec.get({
-              plain: true
-            }), db.user.model)).sanitize();
-          });
-          res.json(users);
-        })
-        .catch(function(err){
-          res.status(500).send({
-            errors: err.errors  
-          });
-        });;
+    req.authorizer.getOwners(id)
+      .then(function(users){
+        users.forEach(function(rec){
+          (new validation(rec.get({
+            plain: true
+          }), db.user.model)).sanitize();
+        });
+        res.json(users);
       })
       .catch(function(err){
         res.status(500).send({
