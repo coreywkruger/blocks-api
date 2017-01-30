@@ -175,6 +175,40 @@ module.exports = {
     });
   },
 
+  delete: function(db, req, res){
+
+    if(!req.authorizer.isAllowed('template.delete')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
+    req.authorizer.owns('template.delete', req.session.user_id, req.params.id, function(err, owns){
+      if(!owns || err){
+        return res.status(403).send({
+          errors: ['You do not own this resource.']
+        });
+      }
+
+      db.template.connection
+        .destroy({
+          where: {
+            id: req.params.id
+          }
+        })
+        .then(function(success){
+          res.json({
+            delete: true
+          })
+        })
+        .catch(function(err){
+          res.status(500).send({
+            errors: err  
+          });
+        });
+    });
+  },
+
   users: function(db, req, res){
 
     if(!req.authorizer.isAllowed('template.read')){
