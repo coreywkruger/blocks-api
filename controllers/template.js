@@ -51,10 +51,13 @@ module.exports = {
         }
       })
       .then(function(recs){
-        recs.forEach(function(rec){
-          (new validation(rec.get({
+        recs = _.map(recs, function(rec){
+          var recPlain = rec.get({
             plain: true
-          }), db.template.model)).sanitize();
+          });
+          var response = (new validation(recPlain, db.template.model)).sanitize();
+          delete response.content;
+          return response;
         });
         res.json(recs);
       })

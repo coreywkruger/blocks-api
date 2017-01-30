@@ -16,23 +16,23 @@ const initialize = function(sequelize, db){
       type: sequelize.TEXT
     },
     created_at: {
-      type: sequelize.BIGINT
+      type: sequelize.DATE,
+      defaultValue: sequelize.NOW
     },
     updated_at: {
-      type: sequelize.BIGINT
+      type: sequelize.DATE,
+      defaultValue: sequelize.NOW
     }
   }, {
     tableName: 'templates',
     timestamps: false,
     hooks: {
       beforeUpdate: function(template, options, done){
-        template.updated_at = Date.now();
+        template.updated_at = sequelize.NOW();
         done();
       },
       beforeCreate: function(template, options, done){
         template.id = uuid.v4();
-        template.created_at = Date.now();
-        template.updated_at = Date.now();
         done();
       }
     }
