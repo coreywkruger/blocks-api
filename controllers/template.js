@@ -188,7 +188,7 @@ module.exports = {
     req.authorizer.getOwners(id, 'template.update', function(err, users){
       if(err){
         return res.status(500).send({
-          errors: err  
+          errors: err
         });
       }
       res.json(users);
