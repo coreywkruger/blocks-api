@@ -35,7 +35,7 @@ module.exports = {
       })
       .catch(function(err){
         return res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   }

@@ -33,7 +33,7 @@ module.exports = {
       })
       .catch(function(err){
         res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   },
@@ -66,7 +66,7 @@ module.exports = {
       })
       .catch(function(err){
         res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   },
@@ -95,7 +95,7 @@ module.exports = {
       })
       .catch(function(err){
         res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   }

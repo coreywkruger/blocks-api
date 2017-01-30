@@ -24,14 +24,29 @@ module.exports = {
         name: args.name
       })
       .then(function(template){
-        var response = new validation(template.get({
-          plain: true
-        }), db.template.model);
-        res.json(response.sanitize());
+
+        req.authorizer.authorize(req.session.user_id, template.id, [
+          'template.create',
+          'template.read',
+          'template.update',
+          'template.delete',
+        ], function(err){
+
+          if(err){
+            return res.status(500).send({
+              errors: err  
+            });
+          }
+
+          var response = new validation(template.get({
+            plain: true
+          }), db.template.model);
+          res.json(response.sanitize());
+        });
       })
       .catch(function(err){
         res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   },
@@ -63,7 +78,7 @@ module.exports = {
       })
       .catch(function(err){
         res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       });
   },
@@ -103,7 +118,7 @@ module.exports = {
         })
         .catch(function(err){
           res.status(500).send({
-            errors: err.errors  
+            errors: err  
           });
         });
     });
@@ -154,7 +169,7 @@ module.exports = {
         })
         .catch(function(err){
           res.status(500).send({
-            errors: err.errors  
+            errors: err  
           });
         });
     });
@@ -173,7 +188,7 @@ module.exports = {
     req.authorizer.getOwners(id, 'template.update', function(err, users){
       if(err){
         return res.status(500).send({
-          errors: err.errors  
+          errors: err  
         });
       }
       res.json(users);
