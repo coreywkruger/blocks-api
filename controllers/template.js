@@ -146,26 +146,25 @@ module.exports = {
 
       db.sequelize
         .query(`
-        UPDATE templates as t 
+        UPDATE templates
           SET 
-            t.content = COALESCE(:content, t.content),
-            t.name = COALESCE(:name, t.name)
+            content = COALESCE(:content, content),
+            name = COALESCE(:name, name)
           WHERE 
-            t.organization_id = :organization_id,
-            t.id = :id;`, 
+            :organization_id = organization_id AND
+            :id = id;`, 
         {
           replacements: {
             organization_id: req.session.organization_id,
             id: req.params.id,
-            content: args.content,
-            name: args.name
+            content: args.content || null,
+            name: args.name || null
           }
         })
         .then(function(template){
-          var response = new validation(template.get({
-            plain: true
-          }), db.template.model);
-          res.json(response.sanitize());
+          res.json({
+            success: true  
+          });
         })
         .catch(function(err){
           res.status(500).send({
@@ -198,7 +197,7 @@ module.exports = {
         })
         .then(function(success){
           res.json({
-            delete: true
+            sucess: true
           })
         })
         .catch(function(err){
