@@ -16,6 +16,7 @@ var configLoader = require('./lib/config');
         console.log(err);
         process.exit(1);
       }
+      console.log('successfully started')
     });
   });
 })(process.env.CONFIG);

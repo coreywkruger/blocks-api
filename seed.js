@@ -12,6 +12,8 @@ const roles_seed =
   fs.readFileSync('./seed/roles_seed.sql').toString();
 const role_permissions_seed = 
   fs.readFileSync('./seed/role_permissions_seed.sql').toString();
+const entity_roles_seed = 
+  fs.readFileSync('./seed/entity_roles_seed.sql').toString();
 const users_seed = 
   fs.readFileSync('./seed/users_seed.sql').toString();
 const organizations_seed = 
@@ -58,6 +60,12 @@ const entity_permissions_seed =
           .catch(done);
       }, function(done){
         sequelize.query(role_permissions_seed)
+          .then(function(res){
+            done();
+          })
+          .catch(done);
+      }, function(done){
+        sequelize.query(entity_roles_seed)
           .then(function(res){
             done();
           })

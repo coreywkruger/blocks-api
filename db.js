@@ -3,7 +3,7 @@ const models = require('./models');
 
 function init(connection, cb){
   var db = new sequelize(connection, {
-    logging: false
+    logging: true
   });
   var collection = {};
   for(var key in models){
@@ -13,7 +13,7 @@ function init(connection, cb){
     };
     collection.sequelize = db;
   }
-  db.sync({ force: true })
+  db.sync({ force: false })
     .then(function(err){
       cb(err, collection);
     });
