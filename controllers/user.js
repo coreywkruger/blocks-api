@@ -6,7 +6,7 @@ module.exports = {
 
   create: function(db, req, res){
     
-    if(!req.authorizer.isAllowed('write')){
+    if(!req.authorizer.isAllowed('user.write')){
       return res.status(403).send({
         errors: ['You do not have permission to do this.']
       })
@@ -40,7 +40,7 @@ module.exports = {
 
   get: function(db, req, res){
     
-    if(!req.authorizer.isAllowed('read')){
+    if(!req.authorizer.isAllowed('user.read')){
       return res.status(403).send({
         errors: ['You do not have permission to do this.']
       })
@@ -73,7 +73,7 @@ module.exports = {
 
   list: function(db, req, res){
 
-    if(!req.authorizer.isAllowed('read')){
+    if(!req.authorizer.isAllowed('user.read')){
       return res.status(403).send({
         errors: ['You do not have permission to do this.']
       })

@@ -16,6 +16,10 @@ function start(config, cb){
       controllers.auth.login(models, req, res);
     });
 
+    router.post('/invite', function(req, res) {
+      controllers.auth.invite(models, req, res, config.get('signup'));
+    });
+
     router.post('/signup', function(req, res) {
       controllers.user.create(models, req, res);
     });

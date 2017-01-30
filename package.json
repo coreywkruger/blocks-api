@@ -20,7 +20,9 @@
   "dependencies": {
     "async": "^2.1.4",
     "bcrypt": "^1.0.2",
+    "blocks-permissions": "git+https://github.com/coreywkruger/blocks-permissions.git#master",
     "body-parser": "^1.16.0",
+    "crypto-js": "^3.1.9-1",
     "express": "^4.14.0",
     "lodash": "^4.17.4",
     "nconf": "^0.8.4",
@@ -28,7 +30,6 @@
     "nodemailer": "^2.7.0",
     "pg": "^6.1.2",
     "sequelize": "^3.30.0",
-    "uuid": "^3.0.1",
-    "blocks-permissions": "git+https://github.com/coreywkruger/blocks-permissions.git#master"
+    "uuid": "^3.0.1"
   }
 }
