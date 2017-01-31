@@ -79,17 +79,21 @@ module.exports = {
       })
     }
 
-    db.user.connection
-      .findAll({
-        where: {
-          organization_id: req.session.organization_id,
-        }
+    db.sequelize
+      .query(`
+        SELECT * 
+        FROM users u INNER JOIN memberships m
+        ON m.user_id = u.id AND m.organization_id = :organization_id
+        ORDER BY u.email ASC;
+      `, {
+        replacements: {
+          organization_id: req.session.organization_id
+        },
+        type: db.sequelize.QueryTypes.SELECT
       })
       .then(function(recs){
         recs.forEach(function(rec){
-          (new validation(rec.get({
-            plain: true
-          }), db.user.model)).sanitize();
+          (new validation(rec, db.user.model)).sanitize();
         });
         res.json(recs);
       })

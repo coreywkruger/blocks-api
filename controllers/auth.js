@@ -170,9 +170,12 @@ module.exports = {
   invite: function(db, req, res, config){
 
     var args = _.pick(req.body, [
-      'originator_id', 
-      'target_id',
-      'template_id'
+      'originator_id',
+      'template_id',
+      'email',
+      'name',
+      'job',
+      'company'
     ]);
 
     async.waterfall([
@@ -185,18 +188,6 @@ module.exports = {
         })
         .then(function(originator){
           callback(null, originator);
-        })
-        .catch(callback);
-      },
-      function(originator, callback){
-        db.user.connection
-        .findOne({
-          where: {
-            id: args.target_id
-          }
-        })
-        .then(function(target){
-          callback(null, originator, target);
         })
         .catch(callback);
       },
@@ -233,11 +224,11 @@ module.exports = {
 
       var mailOptions = {
           from: `"Blocks Editor" <${config.address}>`,
-          to: target.email,
+          to: args.email,
           subject: `${originator.name} invited you to ${template.name}`,
           html: `
           <div>
-            <p><b>Hi ${target.name}</b></p>
+            <p><b>Hi ${args.name}</b></p>
             <p>
               ${originator.name} invited you to collaborate on <a href="${config.invite_url}?invite_token=${token}">${template.name}</a>
             </p>

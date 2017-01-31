@@ -1,5 +1,5 @@
 INSERT INTO entity_permissions (id, entity_id, entity_type, target_id, target_type, permission_id, created_at, updated_at) VALUES 
-  ('6068435c-a0fc-4c1a-81c3-2b43a9a89818', '4a24ec6c-3b41-40fb-b481-6fe71a0c0808', 'user', '991fbb31-5ad8-4a28-9e91-331d5f754ea6', 'template', '94074f3a-73a1-40cf-8f2f-d3ff33965129', NOW(), NOW()),
+  ('6068435c-a0fc-4c1a-81c3-2b43a9a89818', '4a24ec6c-3b41-40fb-b481-6fe71a0c0808', 'user', '991fbb31-5ad8-4a28-9e91-331d5f754ea6', 'template', 'b2235544-eb0d-4859-bbc4-36f650f2b066', NOW(), NOW()),
   ('f590eb47-26e8-4d3a-a9e1-45429938122c', '4a24ec6c-3b41-40fb-b481-6fe71a0c0808', 'user', '991fbb31-5ad8-4a28-9e91-331d5f754ea6', 'template', '09ffa54f-3fcf-4d38-b742-09022f892748', NOW(), NOW()),
   ('b1aaed8b-adea-4b7a-b73a-df014cdd5eae', '4a24ec6c-3b41-40fb-b481-6fe71a0c0808', 'user', '991fbb31-5ad8-4a28-9e91-331d5f754ea6', 'template', 'd4a65d09-58b6-4cd7-868d-5bffa1f659b4', NOW(), NOW()),
   ('fe20102c-4db4-4086-8fb1-151f55e762fb', '4a24ec6c-3b41-40fb-b481-6fe71a0c0808', 'user', '991fbb31-5ad8-4a28-9e91-331d5f754ea6', 'template', '69221d48-1313-41f9-9002-501bd8d5e653', NOW(), NOW());
