@@ -62,3 +62,9 @@ CREATE TABLE users (
   created_at timestamp with time zone,
   updated_at timestamp with time zone
 );
+
+CREATE TABLE memberships (
+  id UUID PRIMARY KEY,
+  organization_id UUID REFERENCES organizations,
+  user_id UUID REFERENCES users
+);

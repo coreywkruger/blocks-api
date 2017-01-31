@@ -1,6 +1,7 @@
 {
   "api": {
-    "port": "8888"
+    "port": "8888",
+    "private_key": "123supersecret"
   },
   "db": {
     "connection": "postgres://db:db@localhost:5432/blocks"

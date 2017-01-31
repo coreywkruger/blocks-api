@@ -18,6 +18,8 @@ const users_seed =
   fs.readFileSync('./seed/users_seed.sql').toString();
 const organizations_seed = 
   fs.readFileSync('./seed/organizations_seed.sql').toString();
+const memberships_seed = 
+  fs.readFileSync('./seed/memberships_seed.sql').toString();
 const templates_seed = 
   fs.readFileSync('./seed/templates_seed.sql').toString();
 const entity_permissions_seed = 
@@ -78,6 +80,12 @@ const entity_permissions_seed =
           .catch(done);
       }, function(done){
         sequelize.query(organizations_seed)
+          .then(function(res){
+            done();
+          })
+          .catch(done);
+      }, function(done){
+        sequelize.query(memberships_seed)
           .then(function(res){
             done();
           })
