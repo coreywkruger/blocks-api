@@ -170,8 +170,6 @@ module.exports = {
   invite: function(db, req, res, config){
 
     var args = _.pick(req.body, [
-      'originator_id',
-      'template_id',
       'email',
       'name',
       'job',
@@ -183,7 +181,7 @@ module.exports = {
         db.user.connection
         .findOne({
           where: {
-            id: args.originator_id
+            id: req.session.user_id
           }
         })
         .then(function(originator){
@@ -191,20 +189,20 @@ module.exports = {
         })
         .catch(callback);
       },
-      function(originator, target, callback){
+      function(originator, callback){
         db.template.connection
         .findOne({
           where: {
             organization_id: req.session.organization_id,
-            id: args.template_id
+            id: req.params.template_id
           }
         })
         .then(function(template){
-          callback(null, originator, target, template);
+          callback(null, originator, template);
         })
         .catch(callback);
       }
-    ], function(err, originator, target, template){
+    ], function(err, originator, template){
       if(err){
         return res.status(500).send({
           errors: err  

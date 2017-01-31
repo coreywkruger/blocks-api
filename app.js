@@ -27,7 +27,7 @@ function start(config, cb){
 
     var privateRouter = express.Router();
 
-    privateRouter.post('/invite', function(req, res) {
+    privateRouter.post('/invite/:template_id', function(req, res) {
       controllers.auth.invite(models, req, res, config.get('signup'));
     });
 
