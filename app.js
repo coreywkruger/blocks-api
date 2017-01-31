@@ -18,7 +18,7 @@ function start(config, cb){
     });
 
     publicRouter.post('/login/:organization_id', function(req, res) {
-      controllers.auth.login(models, req, res, config.get('api'));
+      controllers.auth.loginTeam(models, req, res, config.get('api'));
     });
 
     publicRouter.post('/signup', function(req, res) {
@@ -87,19 +87,8 @@ function start(config, cb){
       console.log(req.method, req.hostname, req.path);
       next();
     });
-
-    // hack
-    // app.use(function(req, res, next){
-    //   // authenticate stub
-    //   req.session = {
-    //     user_id: '4a24ec6c-3b41-40fb-b481-6fe71a0c0808',
-    //     organization_id: '2540b4bd-b1b0-4cb3-a6be-db9b9cded0d4'
-    //   };
-    //   next();
-    // });
-
     app.use('/api', publicRouter);
-    app.use(authenticator(config.get('api').private_key));
+    app.use(authenticator(models, config.get('api')));
     app.use(function(req, res, next){
       permissions.initialize({
         database: config.get('db').connection
