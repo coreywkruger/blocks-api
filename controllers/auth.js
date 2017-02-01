@@ -147,55 +147,41 @@ module.exports = {
       'company'
     ]);
 
-    async.waterfall([
-      function(callback){
-        db.user.connection
+    Promise.all([
+      db.user.connection
         .findOne({
           where: {
             id: req.session.user_id
           }
-        })
-        .catch(callback)
-        .then(function(originator){
-          callback(null, originator);
-        });
-      },
-      function(originator, callback){
-        db.template.connection
+        }),
+      db.template.connection
         .findOne({
           where: {
             organization_id: req.session.organization_id,
             id: req.params.template_id
           }
         })
-        .catch(callback)
-        .then(function(template){
-          callback(null, originator, template);
-        });
-      }
-    ], function(err, originator, template){
-      if(err){
-        return res.status(500).send({
-          errors: err  
-        });
-      }
+    ])
+    .catch(function(err){
+      res.status(500).send({
+        errors: err  
+      });
+    })
+    .then(function(values){
 
+      var originator = values[0];
+      var template = values[1];
       var transporter = nodemailer
         .createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
 
-      encryption
+      return encryption
         .encryptSymmetric(config.private_key, JSON.stringify({
           timestamp: Date.now(),
           organization_id: req.session.organization_id,
           template_id: template.id
         }))
-        .catch(function(err){
-          return res.status(500).send({
-            errors: err
-          });
-        })
         .then(function(token){
-              
+                  
           token = encodeURIComponent(token);
 
           var mailOptions = {
@@ -226,8 +212,8 @@ module.exports = {
               success: true
             });
           });
-        });
-      });
+        })
+    });
   },
 
   signup: function(db, req, res, config){
