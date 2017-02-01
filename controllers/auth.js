@@ -67,7 +67,7 @@ module.exports = {
           .encryptSymmetric(config.private_key, JSON.stringify({
             timestamp: Date.now(),
             user_id: user.id
-          })
+          }))
           .then(function(token){
             res.json({
               organizations: organizations,
