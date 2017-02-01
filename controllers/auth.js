@@ -96,69 +96,46 @@ module.exports = {
         });
       })
       .then(function(token){
-      
-        if(Date.now() - token.timestamp < 1000 * 60 * 60){
+        
+        token = JSON.parse(token);
+
+        if(Date.now() - token.timestamp > 1000 * 60 * 60 * 10){
           return res.status(402).send({
             errors: ['Your session has expired.']
           });
         }
 
-        async.waterfall([
-          function(done){
+        Promise
+          .all([
             db.organization.connection
               .findOne({
                 id: req.params.organization_id
-              })
-              .catch(done)
-              .then(function(organization){
-                if(organization === null){
-                  return res.status(402).send({
-                    errors: ['Invalid session.']
-                  });
-                }
-                done(null, organization);
-              });
-          }, 
-          function(organization, done){
+              }),
             db.user.connection
               .findOne({
                 id: token.user_id
               })
-              .catch(done)
-              .then(function(user){
-                if(user === null){
-                  return res.status(402).send({
-                    errors: ['Invalid session.']
-                  });
-                }
-                done(null, organization, user);
+          ])
+          .then(function(values){
+
+            return encryption
+              .encryptSymmetric(config.private_key, JSON.stringify({
+                timestamp: Date.now(),
+                user_id: values[0].id,
+                organization_id: values[1].id
+              }))
+              .then(function(teamSession){
+                res.json({
+                  token: teamSession
+                });
               });
-          }
-        ], function(err, organization, user){
-          if(err){
-            return res.status(402).send({
-              errors: ['Invalid session.']
+          })
+          .catch(function(err){
+            return res.status(500).send({
+              errors: err
             });
-          }
-          
-          encryption
-            .encryptSymmetric(config.private_key, JSON.stringify({
-              timestamp: Date.now(),
-              user_id: user.id,
-              organization_id: organization.id
-            }))
-            .catch(function(err){
-              return res.status(500).send({
-                errors: err
-              });
-            })
-            .then(function(teamSession){
-              res.json({
-                token: teamSession
-              });
-            });
+          });
         });
-    });
   },
 
   invite: function(db, req, res, config){
