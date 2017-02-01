@@ -23,70 +23,62 @@ module.exports = {
         },
         type: db.sequelize.QueryTypes.SELECT
       })
-      .catch(function(err){
-        return res.status(500).send({
-          errors: err  
-        });
-      })
-      .then(function(users){
-        if(!users.length){
-          return res.status(404).send({
-            errors: ['Not Found'] 
+      .then(
+        function(users){
+          if(!users.length){
+            return res.status(404).send({
+              errors: ['Users not Found'] 
+            });
+          }
+          user = users[0];
+          // compare the passwords
+          return bcrypt
+            .compare(args.password, user.password_hash)
+        },
+        function(err){
+          return res.status(500).send({
+            errors: ['Incorrect password']
           });
         }
-        user = users[0];
-
-        // compare the passwords
-        bcrypt
-          .compare(args.password, user.password_hash)
-          .catch(function(err){
-            return res.status(500).send({
-              errors: err  
-            });
+      )
+      .then(function(match){
+        // get a list of all the teams this user belongs to
+        return db.sequelize
+          .query(`
+          SELECT o.id, o.name
+          FROM memberships m INNER JOIN organizations o
+            ON m.organization_id = o.id AND m.user_id = :user_id
+          ORDER BY o.name ASC
+          `, {
+            replacements: {
+              user_id: user.id
+            },
+            type: db.sequelize.QueryTypes.SELECT
           })
-          .then(function(match){
-            if(!match){
-              return res.status(401).send({
-                errors: ['incorrect password']
-              });
-            }
-            
-            // get a list of all the teams this user belongs to
-            db.sequelize
-              .query(`
-              SELECT o.id, o.name
-              FROM memberships m INNER JOIN organizations o
-                ON m.organization_id = o.id AND m.user_id = :user_id
-              ORDER BY o.name ASC
-              `, {
-                replacements: {
-                  user_id: user.id
-                },
-                type: db.sequelize.QueryTypes.SELECT
-              })
-              .catch(function(err){
-                return res.status(500).send({
-                  errors: err  
-                });
-              })
-              .then(function(organizations){
-
-                // create token
-                encryption
-                  .encryptSymmetric(config.private_key, 
-                    JSON.stringify({
-                      timestamp: Date.now(),
-                      user_id: user.id
-                    })
-                  )
-                  .then(function(session){
-                    res.json({
-                      organizations: organizations,
-                      token: session
-                    });
-                  });
-              });
+      })
+      .then(function(organizations){
+        if(!organizations.length){
+          return res.status(404).send({
+            errors: ['Organizations not Found'] 
           });
+        }
+        // create token
+        return encryption
+          .encryptSymmetric(config.private_key, JSON.stringify({
+            timestamp: Date.now(),
+            user_id: user.id
+          })
+          .then(function(token){
+            res.json({
+              organizations: organizations,
+              token: token
+            })
+          });
+      })
+      .catch(function(err){
+        return res.status(500).send({
+          errors: err
+        });
       });
   },
 
@@ -150,13 +142,11 @@ module.exports = {
           }
           
           encryption
-            .encryptSymmetric(config.private_key, 
-              JSON.stringify({
-                timestamp: Date.now(),
-                user_id: user.id,
-                organization_id: organization.id
-              })
-            )
+            .encryptSymmetric(config.private_key, JSON.stringify({
+              timestamp: Date.now(),
+              user_id: user.id,
+              organization_id: organization.id
+            }))
             .catch(function(err){
               return res.status(500).send({
                 errors: err
@@ -217,13 +207,11 @@ module.exports = {
         .createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
 
       encryption
-        .encryptSymmetric(config.private_key, 
-          JSON.stringify({
-            timestamp: Date.now(),
-            organization_id: req.session.organization_id,
-            template_id: template.id
-          })
-        )
+        .encryptSymmetric(config.private_key, JSON.stringify({
+          timestamp: Date.now(),
+          organization_id: req.session.organization_id,
+          template_id: template.id
+        }))
         .catch(function(err){
           return res.status(500).send({
             errors: err
@@ -362,13 +350,11 @@ module.exports = {
                   }
                   // create token
                   encryption
-                    .encryptSymmetric(config.private_key, 
-                      JSON.stringify({
-                        timestamp: Date.now(),
-                        user_id: ids.user_id,
-                        organization_id: ids.organization_id
-                      })
-                    )
+                    .encryptSymmetric(config.private_key, JSON.stringify({
+                      timestamp: Date.now(),
+                      user_id: ids.user_id,
+                      organization_id: ids.organization_id
+                    }))
                     .then(function(session){
                       res.json({
                         token: session
