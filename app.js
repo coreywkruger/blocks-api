@@ -91,8 +91,6 @@ function start(config, cb){
       console.log(req.method, req.hostname, req.path);
       next();
     });
-    app.use('/api', publicRouter);
-    app.use(authenticator(models, config.get('api')));
     app.use(function(req, res, next){
       permissions.initialize({
         database: config.get('db').connection
@@ -104,6 +102,8 @@ function start(config, cb){
         next();
       });
     });
+    app.use('/api', publicRouter);
+    app.use(authenticator(models, config.get('api')));
     app.use(authorizer);
     app.use('/api', privateRouter);
     app.listen(config.get('api').port, cb);

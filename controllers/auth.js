@@ -220,7 +220,8 @@ module.exports = {
         .encryptSymmetric(config.private_key, 
           JSON.stringify({
             timestamp: Date.now(),
-            organization_id: req.session.organization_id
+            organization_id: req.session.organization_id,
+            template_id: template.id
           })
         )
         .catch(function(err){
@@ -348,20 +349,32 @@ module.exports = {
               })
               .then(function(){
 
-                // create token
-                encryption
-                  .encryptSymmetric(config.private_key, 
-                    JSON.stringify({
-                      timestamp: Date.now(),
-                      user_id: ids.user_id,
-                      organization_id: ids.organization_id
-                    })
-                  )
-                  .then(function(session){
-                    res.json({
-                      token: session
+                req.permissions.assignPermissionToEntity(ids.user_id, token.template_id, [
+                  'template.create',
+                  'template.read',
+                  'template.update',
+                  'template.delete',
+                ], function(err){
+                  if(err){
+                    return res.status(500).send({
+                      errors: err  
                     });
-                  });
+                  }
+                  // create token
+                  encryption
+                    .encryptSymmetric(config.private_key, 
+                      JSON.stringify({
+                        timestamp: Date.now(),
+                        user_id: ids.user_id,
+                        organization_id: ids.organization_id
+                      })
+                    )
+                    .then(function(session){
+                      res.json({
+                        token: session
+                      });
+                    });
+                });
               });
           });
       });
