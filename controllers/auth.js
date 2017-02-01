@@ -16,21 +16,25 @@ module.exports = {
     ]);
 
     // find the user
-    db.user.connection
-      .findOne({
-        email: args.email
+    db.sequelize
+      .query(`SELECT * FROM users WHERE email = :email LIMIT 1;`, {
+        replacements: {
+          email: args.email
+        },
+        type: db.sequelize.QueryTypes.SELECT
       })
       .catch(function(err){
         return res.status(500).send({
           errors: err  
         });
       })
-      .then(function(user){
-        if(user === null){
+      .then(function(users){
+        if(!users.length){
           return res.status(404).send({
             errors: ['Not Found'] 
           });
         }
+        user = users[0];
 
         // compare the passwords
         bcrypt
@@ -113,6 +117,7 @@ module.exports = {
               .findOne({
                 id: req.params.organization_id
               })
+              .catch(done)
               .then(function(organization){
                 if(organization === null){
                   return res.status(402).send({
@@ -120,14 +125,14 @@ module.exports = {
                   });
                 }
                 done(null, organization);
-              })
-              .catch(done);
+              });
           }, 
           function(organization, done){
             db.user.connection
               .findOne({
                 id: token.user_id
               })
+              .catch(done)
               .then(function(user){
                 if(user === null){
                   return res.status(402).send({
@@ -135,8 +140,7 @@ module.exports = {
                   });
                 }
                 done(null, organization, user);
-              })
-              .catch(done);
+              });
           }
         ], function(err, organization, user){
           if(err){
@@ -184,10 +188,10 @@ module.exports = {
             id: req.session.user_id
           }
         })
+        .catch(callback)
         .then(function(originator){
           callback(null, originator);
-        })
-        .catch(callback);
+        });
       },
       function(originator, callback){
         db.template.connection
@@ -197,10 +201,10 @@ module.exports = {
             id: req.params.template_id
           }
         })
+        .catch(callback)
         .then(function(template){
           callback(null, originator, template);
-        })
-        .catch(callback);
+        });
       }
     ], function(err, originator, template){
       if(err){
@@ -211,43 +215,155 @@ module.exports = {
 
       var transporter = nodemailer
         .createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
-      
-      var token = encryption
+
+      encryption
         .encryptSymmetric(config.private_key, 
           JSON.stringify({
             timestamp: Date.now(),
             organization_id: req.session.organization_id
           })
-        );
-
-      var mailOptions = {
-          from: `"Blocks Editor" <${config.address}>`,
-          to: args.email,
-          subject: `${originator.name} invited you to ${template.name}`,
-          html: `
-          <div>
-            <p><b>Hi ${args.name}</b></p>
-            <p>
-              ${originator.name} invited you to collaborate on <a href="${config.invite_url}?invite_token=${token}">${template.name}</a>
-            </p>
-            <p>
-              Thanks,<br>
-              Blockseditor Team
-            </p>
-          </div>
-          `
-      };
-
-      transporter.sendMail(mailOptions, function(err){
-        if(err){
+        )
+        .catch(function(err){
           return res.status(500).send({
-            errors: err  
+            errors: err
           });
-        }
-        res.json({
-          success: true
+        })
+        .then(function(token){
+              
+          token = encodeURIComponent(token);
+
+          var mailOptions = {
+            from: `"Blocks Editor" <${config.address}>`,
+            to: args.email,
+            subject: `${originator.name} invited you to ${template.name}`,
+            html: `
+            <div>
+              <p><b>Hi ${args.name}</b></p>
+              <p>
+                ${originator.name} invited you to collaborate on <a href="${config.invite_url}?invite_token=${token}">${template.name}</a>
+              </p>
+              <p>
+                Thanks,<br>
+                Blockseditor Team
+              </p>
+            </div>
+            `
+          };
+
+          transporter.sendMail(mailOptions, function(err){
+            if(err){
+              return res.status(500).send({
+                errors: err  
+              });
+            }
+            res.json({
+              success: true
+            });
+          });
         });
       });
-    });
+  },
+
+  signup: function(db, req, res, config){
+
+    var args = _.pick(req.body, [
+      'name', 
+      'email', 
+      'password',
+      'job'
+    ]);
+
+    db.user.connection
+      .create({
+        name: args.name,
+        email: args.email,
+        password_hash: args.password,
+        job: args.job
+      })
+      .catch(function(err){
+        res.status(500).send({
+          errors: err  
+        });
+      })
+      .then(function(user){
+
+        res.json({
+          user_id: user.id
+        });
+      });
+  },
+
+  joinTeam: function(db, req, res, config){
+
+    var args = _.pick(req.body, [
+      'user_id',
+      'token'
+    ]);
+
+    encryption
+      .decryptSymmetric(config.private_key, args.token)
+      .catch(function(err){
+        return res.status(402).send({
+          errors: ['Your token is malformed']
+        });
+      })
+      .then(function(token){
+
+        token = JSON.parse(token);
+
+        db.sequelize
+          .query(`
+          SELECT u.id AS user_id, o.id AS organization_id 
+          FROM users u INNER JOIN organizations o 
+            ON u.id = :user_id AND o.id = :organization_id;
+          `, {
+            replacements: {
+              user_id: args.user_id,
+              organization_id: token.organization_id
+            },
+            type: db.sequelize.QueryTypes.SELECT
+          })
+          .catch(function(err){
+            return res.status(500).send({
+              errors: err
+            });
+          })
+          .then(function(ids){
+            if(!ids.length){
+              return res.status(404).send({
+                errors: ['Could not find organization.']
+              });
+            }
+            ids = ids[0];
+
+            db.membership.connection
+              .create({
+                user_id: ids.user_id,
+                organization_id: ids.organization_id
+              })
+              .catch(function(err){
+                res.status(500).send({
+                  errors: err  
+                });
+              })
+              .then(function(){
+
+                // create token
+                encryption
+                  .encryptSymmetric(config.private_key, 
+                    JSON.stringify({
+                      timestamp: Date.now(),
+                      user_id: ids.user_id,
+                      organization_id: ids.organization_id
+                    })
+                  )
+                  .then(function(session){
+                    res.json({
+                      token: session
+                    });
+                  });
+              });
+          });
+      });
   }
 };

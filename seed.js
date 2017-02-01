@@ -35,83 +35,83 @@ const entity_permissions_seed =
     }
     sequelize = new Sequelize(config.get('db').connection, {});
     sequelize.drop({}).then(function(){
-    async.waterfall([
-      function(done){
-        sequelize.query(clean)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(schemas)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(permissions_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(roles_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(role_permissions_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(entity_roles_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(users_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(organizations_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(memberships_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(templates_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }, function(done){
-        sequelize.query(entity_permissions_seed)
-          .then(function(res){
-            done();
-          })
-          .catch(done);
-      }
-    ], function(err){
-      if(err){
-        console.log('failed to migrate');
-        console.log(err);
-        process.exit(1);
-      }
-      console.log('successfully migrated');
-      process.exit();
-    });
+      async.waterfall([
+        function(done){
+          sequelize.query(clean)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(schemas)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(permissions_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(roles_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(role_permissions_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(entity_roles_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(users_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(organizations_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(memberships_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(templates_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }, function(done){
+          sequelize.query(entity_permissions_seed)
+            .then(function(res){
+              done();
+            })
+            .catch(done);
+        }
+      ], function(err){
+        if(err){
+          console.log('failed to migrate');
+          console.log(err);
+          process.exit(1);
+        }
+        console.log('successfully migrated');
+        process.exit();
+      });
     });
   });
 })(process.env.CONFIG);

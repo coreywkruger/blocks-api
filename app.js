@@ -22,7 +22,11 @@ function start(config, cb){
     });
 
     publicRouter.post('/signup', function(req, res) {
-      controllers.user.create(models, req, res);
+      controllers.auth.signup(models, req, res, config.get('api'));
+    });
+
+    publicRouter.post('/join-team', function(req, res) {
+      controllers.auth.joinTeam(models, req, res, config.get('api'));
     });
 
     var privateRouter = express.Router();

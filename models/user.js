@@ -18,24 +18,27 @@ const initialize = function(sequelize, db){
     name: {
       type: sequelize.STRING
     },
+    job: {
+      type: sequelize.STRING
+    },
     created_at: {
-      type: sequelize.BIGINT
+      type: sequelize.DATE
     },
     updated_at: {
-      type: sequelize.BIGINT
+      type: sequelize.DATE
     }
   }, {
     tableName: 'users',
     timestamps: false,
     hooks: {
       beforeUpdate: function(user, options, done){
-        user.updated_at = Date.now();
+        // user.updated_at = sequelize.NOW();
         done();
       },
       beforeCreate: function(user, options, done){
         user.id = uuid.v4();
-        user.created_at = Date.now();
-        user.updated_at = Date.now();
+        // user.created_at = sequelize.NOW();
+        // user.updated_at = sequelize.NOW();
         if(user.password_hash){
           bcrypt.hash(user.password_hash, 10, function(err, hash){
             if(err){
@@ -66,6 +69,10 @@ const model = {
     public: false
   },
   name: {
+    required: false,
+    public: true
+  },
+  job: {
     required: false,
     public: true
   },
