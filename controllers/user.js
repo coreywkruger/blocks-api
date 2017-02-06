@@ -20,7 +20,6 @@ module.exports = {
 
     db.user.connection
       .create({
-        id: uuid.v4(),
         email: args.email,
         name: args.name,
         password_hash: args.password

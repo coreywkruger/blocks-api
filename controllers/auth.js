@@ -23,8 +23,12 @@ module.exports = {
         },
         type: db.sequelize.QueryTypes.SELECT
       })
-      .then(
-        function(users){
+      .catch(function(err){
+        return res.status(500).send({
+          errors: err
+        });
+      })
+      .then(function(users){
           if(!users.length){
             return res.status(404).send({
               errors: ['Users not Found'] 
@@ -34,51 +38,55 @@ module.exports = {
           // compare the passwords
           return bcrypt
             .compare(args.password, user.password_hash)
-        },
-        function(err){
-          return res.status(500).send({
-            errors: ['Incorrect password']
-          });
-        }
-      )
-      .then(function(match){
-        // get a list of all the teams this user belongs to
-        return db.sequelize
-          .query(`
-          SELECT o.id, o.name
-          FROM memberships m INNER JOIN organizations o
-            ON m.organization_id = o.id AND m.user_id = :user_id
-          ORDER BY o.name ASC
-          `, {
-            replacements: {
-              user_id: user.id
-            },
-            type: db.sequelize.QueryTypes.SELECT
-          })
-      })
-      .then(function(organizations){
-        if(!organizations.length){
-          return res.status(404).send({
-            errors: ['Organizations not Found'] 
-          });
-        }
-        // create token
-        return encryption
-          .encryptSymmetric(config.private_key, JSON.stringify({
-            timestamp: Date.now(),
-            user_id: user.id
-          }))
-          .then(function(token){
-            res.json({
-              organizations: organizations,
-              token: token
+            .catch(function(err){
+              return res.status(500).send({
+                errors: err
+              });
             })
-          });
-      })
-      .catch(function(err){
-        return res.status(500).send({
-          errors: err
-        });
+            .then(function(match){
+              if(!match){
+                return res.status(402).send({
+                  errors: ['Incorrect password']
+                });
+              }
+              // get a list of all the teams this user belongs to
+              return db.sequelize
+                .query(`
+                SELECT o.id, o.name
+                FROM memberships m INNER JOIN organizations o
+                  ON m.organization_id = o.id AND m.user_id = :user_id
+                ORDER BY o.name ASC
+                `, {
+                  replacements: {
+                    user_id: user.id
+                  },
+                  type: db.sequelize.QueryTypes.SELECT
+                })
+            })
+            .then(function(organizations){
+              if(!organizations.length){
+                return res.status(404).send({
+                  errors: ['Organizations not Found'] 
+                });
+              }
+              // create token
+              return encryption
+                .encryptSymmetric(config.private_key, JSON.stringify({
+                  timestamp: Date.now(),
+                  user_id: user.id
+                }))
+                .catch(function(err){
+                  return res.status(500).send({
+                    errors: err
+                  });
+                })
+                .then(function(token){
+                  res.json({
+                    organizations: organizations,
+                    token: token
+                  })
+                });
+            });
       });
   },
 

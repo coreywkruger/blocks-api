@@ -9,7 +9,7 @@
   "signup": {
     "address": "blocksapi@gmail.com",
     "password": "temporary",
-    "invite_url": "http://localhost:4001/#/signup",
+    "invite_url": "http://db:4001/#/signup",
     "private_key": "123supersecret"
   }
 }

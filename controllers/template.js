@@ -218,13 +218,38 @@ module.exports = {
 
     var id = req.params.id;
     
-    req.authorizer.getOwners(id, 'template.update', function(err, users){
+    req.authorizer.getOwners(id, 'template.update', function(err, userIds){
       if(err){
         return res.status(500).send({
           errors: err
         });
       }
-      res.json(users);
+      
+      userIds = _.map(userIds, function(userId){
+        return userId.entity_id;
+      });
+
+      db.sequelize.query(`
+      SELECT * FROM users
+      WHERE id in (:userIds)
+      `, {
+        replacements: {
+          userIds: userIds
+        },
+        type: db.sequelize.QueryTypes.SELECT
+      })
+      .catch(function(err){
+        return res.status(500).send({
+          errors: err
+        })
+      })
+      .then(function(recs){
+        recs = _.map(recs, function(rec){
+          var response = (new validation(rec, db.user.model)).sanitize();
+          return response;
+        });
+        res.json(recs);
+      })
     });
   }
 };

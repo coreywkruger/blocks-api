@@ -2,6 +2,7 @@ version: '2'
 
 services:
   api:
+    container_name: blocks-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,11 +14,11 @@ services:
     links:
       - db
   db:
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: "db"
-      POSTGRES_USER: "db"
-      POSTGRES_DB: "blocks"
+    container_name: blocks-db
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    volumes:
+      - "./db:/var/lib/postgresql/data"
     ports:
       - "5432:5432"
