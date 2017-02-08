@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm start
+    # command: entrypoint-api.sh
     ports:
       - "8888:8888"
     volumes:
@@ -15,6 +15,7 @@ services:
       - db
   db:
     container_name: blocks-db
+    image: coreykruger/blocks-db
     build:
       context: .
       dockerfile: Dockerfile.db

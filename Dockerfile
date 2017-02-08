@@ -9,4 +9,4 @@ EXPOSE 8888
 
 COPY . /opt/app
 
-CMD ["/opt/app/entrypoint.sh"]
+CMD ["./entrypoint-api.sh"]

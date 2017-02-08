@@ -23,70 +23,80 @@ module.exports = {
         },
         type: db.sequelize.QueryTypes.SELECT
       })
-      .catch(function(err){
-        return res.status(500).send({
-          errors: err
-        });
-      })
       .then(function(users){
           if(!users.length){
-            return res.status(404).send({
-              errors: ['Users not Found'] 
+            throw({
+              status: 404,
+              errors: ['users not found']
             });
+            return null;
           }
-          user = users[0];
-          // compare the passwords
-          return bcrypt
-            .compare(args.password, user.password_hash)
-            .catch(function(err){
-              return res.status(500).send({
-                errors: err
+          // user = users[0];
+          return Promise.resolve(users[0]);
+      })
+      .then(function(user){
+        // compare the passwords
+        return bcrypt
+          .compare(args.password, user.password_hash)
+          .then(function(match){
+            if(!match){
+              throw({
+                status: 402,
+                errors: ['incorrect password']
               });
-            })
-            .then(function(match){
-              if(!match){
-                return res.status(402).send({
-                  errors: ['Incorrect password']
-                });
-              }
-              // get a list of all the teams this user belongs to
-              return db.sequelize
-                .query(`
-                SELECT o.id, o.name
-                FROM memberships m INNER JOIN organizations o
-                  ON m.organization_id = o.id AND m.user_id = :user_id
-                ORDER BY o.name ASC
-                `, {
-                  replacements: {
-                    user_id: user.id
-                  },
-                  type: db.sequelize.QueryTypes.SELECT
-                })
-            })
-            .then(function(organizations){
-              if(!organizations.length){
-                return res.status(404).send({
-                  errors: ['Organizations not Found'] 
-                });
-              }
-              // create token
-              return encryption
-                .encryptSymmetric(config.private_key, JSON.stringify({
-                  timestamp: Date.now(),
-                  user_id: user.id
-                }))
-                .catch(function(err){
-                  return res.status(500).send({
-                    errors: err
-                  });
-                })
-                .then(function(token){
-                  res.json({
-                    organizations: organizations,
-                    token: token
-                  })
-                });
+              return null;
+            }
+            return Promise.resolve(user);
+          });
+      })
+      .then(function(user){
+        // get a list of all the teams this user belongs to
+        return db.sequelize
+          .query(`
+          SELECT o.id, o.name
+          FROM memberships m INNER JOIN organizations o
+            ON m.organization_id = o.id AND m.user_id = :user_id
+          ORDER BY o.name ASC
+          `, {
+            replacements: {
+              user_id: user.id
+            },
+            type: db.sequelize.QueryTypes.SELECT
+          })
+          .then(function(organizations){
+            return Promise.resolve({
+              organizations, 
+              user
             });
+          });
+      })
+      .then(function(args){
+        if(!args.organizations.length){
+          throw({
+            status: 404,
+            errors: ['organization not found']
+          });
+          return null;
+        }
+        // create token
+        return encryption
+          .encryptSymmetric(config.private_key, JSON.stringify({
+            timestamp: Date.now(),
+            user_id: args.user.id
+          }))
+          .then(function(token){
+            res.json({
+              organizations: args.organizations,
+              token: token
+            })
+          })
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
+        });
       });
   },
 
@@ -98,22 +108,19 @@ module.exports = {
 
     encryption
       .decryptSymmetric(config.private_key, args.token)
-      .catch(function(err){
-        return res.status(402).send({
-          errors: ['You are not authenticated.']  
-        });
+      .then(function(token){
+        token = JSON.parse(token);
+        if(Date.now() - token.timestamp > 1000 * 60 * 60 * 10){
+          throw({
+            status: 402,
+            errors: ['your session has expired']
+          });
+          return null;
+        }
+        return Promise.resolve(token);
       })
       .then(function(token){
-        
-        token = JSON.parse(token);
-
-        if(Date.now() - token.timestamp > 1000 * 60 * 60 * 10){
-          return res.status(402).send({
-            errors: ['Your session has expired.']
-          });
-        }
-
-        Promise
+        return Promise
           .all([
             db.organization.connection
               .findOne({
@@ -124,26 +131,27 @@ module.exports = {
                 id: token.user_id
               })
           ])
-          .then(function(values){
-
-            return encryption
-              .encryptSymmetric(config.private_key, JSON.stringify({
-                timestamp: Date.now(),
-                user_id: values[0].id,
-                organization_id: values[1].id
-              }))
-              .then(function(teamSession){
-                res.json({
-                  token: teamSession
-                });
-              });
-          })
-          .catch(function(err){
-            return res.status(500).send({
-              errors: err
-            });
-          });
+      })
+      .then(function(values){
+        return encryption
+          .encryptSymmetric(config.private_key, JSON.stringify({
+            timestamp: Date.now(),
+            user_id: values[0].id,
+            organization_id: values[1].id
+          }));
+      })
+      .then(function(teamSession){
+        res.json({
+          token: teamSession
         });
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
+        });
+      });
   },
 
   invite: function(db, req, res, config){

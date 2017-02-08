@@ -2,9 +2,7 @@ const sequelize = require('sequelize');
 const models = require('./models');
 
 function init(connection, cb){
-  var db = new sequelize(connection, {
-    logging: true
-  });
+  var db = new sequelize(connection, {});
   var collection = {};
   for(var key in models){
     collection[key] = {
