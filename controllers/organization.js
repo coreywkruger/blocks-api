@@ -1,4 +1,4 @@
-const uuid = require('node-uuid');
+const uuid = require('uuid');
 const _ = require('lodash');
 const validation = require('../lib/validation');
 

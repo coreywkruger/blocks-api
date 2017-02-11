@@ -1,4 +1,4 @@
-const uuid = require('node-uuid');
+const uuid = require('uuid');
 const _ = require('lodash');
 const validation = require('../lib/validation');
 
@@ -33,9 +33,11 @@ module.exports = {
         ], function(err){
 
           if(err){
-            return res.status(500).send({
-              errors: err  
+            throw({
+              status: 500,
+              errors: err
             });
+            return null;
           }
 
           var response = new validation(template.get({
@@ -45,8 +47,10 @@ module.exports = {
         });
       })
       .catch(function(err){
-        res.status(500).send({
-          errors: err  
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
         });
       });
   },
@@ -77,8 +81,10 @@ module.exports = {
         res.json(recs);
       })
       .catch(function(err){
-        res.status(500).send({
-          errors: err  
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
         });
       });
   },
@@ -238,11 +244,6 @@ module.exports = {
         },
         type: db.sequelize.QueryTypes.SELECT
       })
-      .catch(function(err){
-        return res.status(500).send({
-          errors: err
-        })
-      })
       .then(function(recs){
         recs = _.map(recs, function(rec){
           var response = (new validation(rec, db.user.model)).sanitize();
@@ -250,6 +251,11 @@ module.exports = {
         });
         res.json(recs);
       })
+      .catch(function(err){
+        return res.status(500).send({
+          errors: err
+        })
+      });
     });
   }
 };

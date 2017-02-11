@@ -1,6 +1,4 @@
-const uuid = require('node-uuid');
 const _ = require('lodash');
-const async = require('async');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const validation = require('../lib/validation');
@@ -32,7 +30,7 @@ module.exports = {
             return null;
           }
           // user = users[0];
-          return Promise.resolve(users[0]);
+          return users[0];
       })
       .then(function(user){
         // compare the passwords
@@ -41,12 +39,12 @@ module.exports = {
           .then(function(match){
             if(!match){
               throw({
-                status: 402,
+                status: 403,
                 errors: ['incorrect password']
               });
               return null;
             }
-            return Promise.resolve(user);
+            return user;
           });
       })
       .then(function(user){
@@ -64,10 +62,10 @@ module.exports = {
             type: db.sequelize.QueryTypes.SELECT
           })
           .then(function(organizations){
-            return Promise.resolve({
+            return {
               organizations, 
               user
-            });
+            };
           });
       })
       .then(function(args){
@@ -89,7 +87,7 @@ module.exports = {
               organizations: args.organizations,
               token: token
             })
-          })
+          });
       })
       .catch(function(err){
         var status = err.status || 500;
@@ -112,12 +110,12 @@ module.exports = {
         token = JSON.parse(token);
         if(Date.now() - token.timestamp > 1000 * 60 * 60 * 10){
           throw({
-            status: 402,
+            status: 403,
             errors: ['your session has expired']
           });
           return null;
         }
-        return Promise.resolve(token);
+        return token;
       })
       .then(function(token){
         return Promise
@@ -130,7 +128,7 @@ module.exports = {
               .findOne({
                 id: token.user_id
               })
-          ])
+            ]);
       })
       .then(function(values){
         return encryption
@@ -177,59 +175,72 @@ module.exports = {
             id: req.params.template_id
           }
         })
-    ])
-    .catch(function(err){
-      res.status(500).send({
-        errors: err  
-      });
-    })
-    .then(function(values){
+      ])
+      .then(function(values){
+        
+        var template = values[1];
+        var transporter = nodemailer.createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
 
-      var originator = values[0];
-      var template = values[1];
-      var transporter = nodemailer
-        .createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
+        // encrypt invite token
+        return encryption
+          .encryptSymmetric(config.private_key, JSON.stringify({
+            timestamp: Date.now(),
+            organization_id: req.session.organization_id,
+            template_id: template.id
+          }))
+          .then(function(token){
+            return {
+              originator: values[0],
+              template: values[1],
+              token: token
+            };
+          })
+      })
+      .then(function(values){
 
-      return encryption
-        .encryptSymmetric(config.private_key, JSON.stringify({
-          timestamp: Date.now(),
-          organization_id: req.session.organization_id,
-          template_id: template.id
-        }))
-        .then(function(token){
-                  
-          token = encodeURIComponent(token);
+        var originator = values.originator;
+        var template = values.template;
+        var token = encodeURIComponent(values.token);
+        var transporter = nodemailer.createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
 
-          var mailOptions = {
-            from: `"Blocks Editor" <${config.address}>`,
-            to: args.email,
-            subject: `${originator.name} invited you to ${template.name}`,
-            html: `
-            <div>
-              <p><b>Hi ${args.name}</b></p>
-              <p>
-                ${originator.name} invited you to collaborate on <a href="${config.invite_url}?invite_token=${token}">${template.name}</a>
-              </p>
-              <p>
-                Thanks,<br>
-                Blockseditor Team
-              </p>
-            </div>
-            `
-          };
+        var mailOptions = {
+          from: `"Blocks Editor" <${config.address}>`,
+          to: args.email,
+          subject: `${originator.name} invited you to ${template.name}`,
+          html: `
+          <div>
+            <p><b>Hi ${args.name}</b></p>
+            <p>
+              ${originator.name} invited you to collaborate on <a href="${config.invite_url}?invite_token=${token}">${template.name}</a>
+            </p>
+            <p>
+              Thanks,<br>
+              Blockseditor Team
+            </p>
+          </div>
+          `
+        };
 
-          transporter.sendMail(mailOptions, function(err){
-            if(err){
-              return res.status(500).send({
-                errors: err  
-              });
-            }
-            res.json({
-              success: true
+        transporter.sendMail(mailOptions, function(err){
+          if(err){
+            throw({
+              stats: 500,
+              errors: [err]
             });
+            return null;
+          }
+          res.json({
+            success: true
           });
-        })
-    });
+        });
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
+        });
+      });
   },
 
   signup: function(db, req, res, config){
@@ -248,15 +259,14 @@ module.exports = {
         password_hash: args.password,
         job: args.job
       })
+      .then(function(user){
+        res.json({
+          user_id: user.id
+        });
+      })
       .catch(function(err){
         res.status(500).send({
           errors: err  
-        });
-      })
-      .then(function(user){
-
-        res.json({
-          user_id: user.id
         });
       });
   },
@@ -268,17 +278,14 @@ module.exports = {
       'token'
     ]);
 
+    // decrypt token
     encryption
       .decryptSymmetric(config.private_key, args.token)
-      .catch(function(err){
-        return res.status(402).send({
-          errors: ['Your token is malformed']
-        });
-      })
       .then(function(token){
 
         token = JSON.parse(token);
 
+        // check if user and organization in token exist
         db.sequelize
           .query(`
           SELECT u.id AS user_id, o.id AS organization_id 
@@ -291,57 +298,68 @@ module.exports = {
             },
             type: db.sequelize.QueryTypes.SELECT
           })
-          .catch(function(err){
-            return res.status(500).send({
-              errors: err
-            });
-          })
-          .then(function(ids){
-            if(!ids.length){
-              return res.status(404).send({
-                errors: ['Could not find organization.']
-              });
-            }
-            ids = ids[0];
-
-            db.membership.connection
-              .create({
-                user_id: ids.user_id,
-                organization_id: ids.organization_id
-              })
-              .catch(function(err){
-                res.status(500).send({
-                  errors: err  
-                });
-              })
-              .then(function(){
-
-                req.permissions.assignPermissionToEntity(ids.user_id, token.template_id, [
-                  'template.create',
-                  'template.read',
-                  'template.update',
-                  'template.delete',
-                ], function(err){
-                  if(err){
-                    return res.status(500).send({
-                      errors: err  
-                    });
-                  }
-                  // create token
-                  encryption
-                    .encryptSymmetric(config.private_key, JSON.stringify({
-                      timestamp: Date.now(),
-                      user_id: ids.user_id,
-                      organization_id: ids.organization_id
-                    }))
-                    .then(function(session){
-                      res.json({
-                        token: session
-                      });
-                    });
-                });
-              });
+      }, function(err){
+        throw({
+          status: 403,
+          errors: ['your token is malformed']
+        });
+        return null;
+      })
+      .then(function(ids){
+        if(!ids.length){
+          throw({
+            status: 404,
+            errors: ['could not find organizations']
           });
+          return null;
+        }
+        ids = ids[0];
+
+        // create new membership
+        return db.membership.connection
+          .create({
+            user_id: ids.user_id,
+            organization_id: ids.organization_id
+          })
+          .then(function(){
+            return ids;
+          });
+      })
+      .then(function(ids){
+        req.permissions.assignPermissionToEntity(ids.user_id, token.template_id, [
+          'template.create',
+          'template.read',
+          'template.update',
+          'template.delete',
+        ], function(err){
+          if(err){
+            throw({
+              status: 500,
+              errors: [err]
+            });
+            return null;
+          }
+
+          // create token
+          encryption
+            .encryptSymmetric(config.private_key, JSON.stringify({
+              timestamp: Date.now(),
+              user_id: ids.user_id,
+              organization_id: ids.organization_id
+            }))
+            .then(function(session){
+              res.json({
+                token: session
+              });
+            });
+        });
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
+        });
       });
   }
 };

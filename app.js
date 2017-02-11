@@ -2,10 +2,9 @@ const express       = require('express');
 const bodyParser    = require('body-parser');
 const authorizer    = require('./lib/authorizer');
 const authenticator = require('./lib/authenticator');
-const db            = require('./db.js');
-const permissions   = require('blocks-permissions');
-const uuid          = require('node-uuid');
+const db            = require('./db');
 const controllers   = require('./controllers');
+const permissions   = require('blocks-permissions');
 
 function start(config, cb){
 
