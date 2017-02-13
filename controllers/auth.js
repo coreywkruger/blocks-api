@@ -85,6 +85,7 @@ module.exports = {
           .then(function(token){
             res.json({
               organizations: args.organizations,
+              user: new validation(args.user, db.user.model).sanitize(),
               token: token
             })
           });

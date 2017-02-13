@@ -6,7 +6,7 @@ module.exports = {
 
   create: function(db, req, res){
     
-    if(!req.authorizer.isAllowed('user.write')){
+    if(!req.authorizer.isAllowed('user.create')){
       return res.status(403).send({
         errors: ['You do not have permission to do this.']
       })
@@ -28,6 +28,55 @@ module.exports = {
         var response = new validation(rec.get({
           plain: true
         }), db.user.model);
+        res.json(response.sanitize());
+      })
+      .catch(function(err){
+        res.status(500).send({
+          errors: err  
+        });
+      });
+  },
+
+
+  update: function(db, req, res){
+    
+    if(!req.authorizer.isAllowed('user.update')){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
+    if(req.params.id !== req.session.user_id){
+      return res.status(403).send({
+        errors: ['You do not have permission to do this.']
+      })
+    }
+
+    var args = _.pick(req.body, [
+      'email', 
+      'name',
+      'job'
+    ]);
+
+    db.sequelize
+      .query(`
+      UPDATE users SET 
+        email = COALESCE(:email, email),
+        name = COALESCE(:name, name),
+        job = COALESCE(:job, job)
+      WHERE id = :id
+      RETURNING *
+      `, {
+        replacements: {
+          email: args.email,
+          name: args.name,
+          job: args.job,
+          id: req.params.id
+        }
+      })
+      .then(function(recs){
+        rec = recs[0][0];
+        var response = new validation(rec, db.user.model);
         res.json(response.sanitize());
       })
       .catch(function(err){

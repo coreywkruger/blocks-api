@@ -46,6 +46,10 @@ function start(config, cb){
       controllers.user.get(models, req, res);
     });
 
+    privateRouter.put('/users/:id', function(req, res){
+      controllers.user.update(models, req, res);
+    });
+
     privateRouter.post('/templates', function(req, res){
       controllers.template.create(models, req, res);
     });
