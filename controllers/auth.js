@@ -278,16 +278,16 @@ module.exports = {
       'user_id',
       'token'
     ]);
-
+    
     // decrypt token
     encryption
       .decryptSymmetric(config.private_key, args.token)
       .then(function(token){
 
         token = JSON.parse(token);
-
+        
         // check if user and organization in token exist
-        db.sequelize
+        return db.sequelize
           .query(`
           SELECT u.id AS user_id, o.id AS organization_id 
           FROM users u INNER JOIN organizations o 
@@ -299,23 +299,23 @@ module.exports = {
             },
             type: db.sequelize.QueryTypes.SELECT
           })
-      }, function(err){
-        throw({
-          status: 403,
-          errors: ['your token is malformed']
-        });
-        return null;
+          .then(function(ids){
+            return {
+              token,
+              ids
+            };
+          })
       })
-      .then(function(ids){
-        if(!ids.length){
+      .then(function(response){
+        if(!response.ids.length){
           throw({
             status: 404,
             errors: ['could not find organizations']
           });
           return null;
         }
-        ids = ids[0];
-
+        ids = response.ids[0];
+        
         // create new membership
         return db.membership.connection
           .create({
@@ -323,11 +323,14 @@ module.exports = {
             organization_id: ids.organization_id
           })
           .then(function(){
-            return ids;
+            return {
+              token: response.token,
+              ids: ids
+            };
           });
       })
-      .then(function(ids){
-        req.permissions.assignPermissionToEntity(ids.user_id, token.template_id, [
+      .then(function(response){
+        req.permissions.assignPermissionToEntity(response.ids.user_id, response.token.template_id, [
           'template.create',
           'template.read',
           'template.update',
@@ -340,13 +343,13 @@ module.exports = {
             });
             return null;
           }
-
+          
           // create token
           encryption
             .encryptSymmetric(config.private_key, JSON.stringify({
               timestamp: Date.now(),
-              user_id: ids.user_id,
-              organization_id: ids.organization_id
+              user_id: response.ids.user_id,
+              organization_id: response.ids.organization_id
             }))
             .then(function(session){
               res.json({
