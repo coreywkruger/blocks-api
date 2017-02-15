@@ -28,6 +28,14 @@ function start(config, cb){
       controllers.auth.joinTeam(models, req, res, config.get('api'));
     });
 
+    publicRouter.post('/request-password', function(req, res) {
+      controllers.auth.requestPassword(models, req, res, config.get('signup'));
+    });
+
+    publicRouter.post('/reset-password', function(req, res) {
+      controllers.auth.resetPassword(models, req, res, config.get('signup'));
+    });
+
     var privateRouter = express.Router();
 
     privateRouter.post('/invite/:template_id', function(req, res) {

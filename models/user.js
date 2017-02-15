@@ -39,17 +39,18 @@ const initialize = function(sequelize, db){
         user.id = uuid.v4();
         // user.created_at = sequelize.NOW();
         // user.updated_at = sequelize.NOW();
-        if(user.password_hash){
-          bcrypt.hash(user.password_hash, 10, function(err, hash){
-            if(err){
-              return done(err);
-            }
-            user.password_hash = hash;
-            done();
-          });
-        } else {
-          done();
-        }
+        // if(user.password_hash){
+        //   bcrypt.hash(user.password_hash, 10, function(err, hash){
+        //     if(err){
+        //       return done(err);
+        //     }
+        //     user.password_hash = hash;
+        //     done();
+        //   });
+        // } else {
+        //   done();
+        // }
+        done();
       }
     }
   });

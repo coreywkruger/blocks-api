@@ -180,7 +180,6 @@ module.exports = {
       .then(function(values){
         
         var template = values[1];
-        var transporter = nodemailer.createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
 
         // encrypt invite token
         return encryption
@@ -225,7 +224,7 @@ module.exports = {
         transporter.sendMail(mailOptions, function(err){
           if(err){
             throw({
-              stats: 500,
+              status: 500,
               errors: [err]
             });
             return null;
@@ -252,13 +251,16 @@ module.exports = {
       'password',
       'job'
     ]);
-
-    db.user.connection
-      .create({
-        name: args.name,
-        email: args.email,
-        password_hash: args.password,
-        job: args.job
+    
+    bcrypt.hash(args.password, 10)
+      .then(function(hash){
+        db.user.connection
+          .create({
+            name: args.name,
+            email: args.email,
+            password_hash: hash,
+            job: args.job
+          })
       })
       .then(function(user){
         res.json({
@@ -357,6 +359,166 @@ module.exports = {
               });
             });
         });
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: errors
+        });
+      });
+  },
+
+  requestPassword: function(db, req, res, config){
+    
+    var args = _.pick(req.body, [
+      'email'
+    ]);
+
+    db.sequelize
+      .query(`SELECT * FROM users WHERE email = :email LIMIT 1;`, {
+        replacements: {
+          email: args.email
+        }
+      })
+      .then(function(users){
+        if(!users.length){
+          throw({
+            status: 404,
+            errors: ['user not found']
+          });
+          return null;
+        }
+        return users[0][0];
+      })
+      .then(function(user){
+        // encrypt invite token
+        return encryption
+          .encryptSymmetric(config.private_key, JSON.stringify({
+            timestamp: Date.now(),
+            user_id: user.id
+          }))
+          .then(function(token){
+            return {
+              user,
+              token
+            };
+          });
+      })
+      .then(function(values){
+
+        var token = encodeURIComponent(values.token);
+        var transporter = nodemailer.createTransport(`smtps://${config.address}:${config.password}@smtp.gmail.com`);
+
+        var mailOptions = {
+          from: `"Blocks Editor" <${config.address}>`,
+          to: values.user.email,
+          subject: `Blocks Email Editor Password Reset`,
+          html: `
+          <div>
+            <p><b>Hi ${values.user.name}</b></p>
+            <p>
+              You have requested a new password for your account. Follow this link for instructions: <a href="${config.reset_password_url}?reset_password_token=${token}">RESET LINK</a>
+            </p>
+            <p>
+              Thanks,<br>
+              Blockseditor Team
+            </p>
+          </div>
+          `
+        };
+
+        transporter.sendMail(mailOptions, function(err){
+          console.log(err)
+          if(err){
+            throw({
+              status: 500,
+              errors: [err]
+            });
+            return null;
+          }
+          res.json({
+            success: true
+          });
+        });
+      })
+      .catch(function(err){
+        var status = err.status || 500;
+        var errors = err.errors || err;
+        return res.status(status).send({
+          errors: [errors]
+        });
+      });
+  },
+
+  resetPassword: function(db, req, res, config){
+
+    var args = _.pick(req.body, [
+      'token',
+      'password',
+      'old_password'
+    ]);
+
+    // decrypt token
+    encryption
+      .decryptSymmetric(config.private_key, args.token)
+      .then(function(token){
+
+        token = JSON.parse(token);
+
+        return token;
+      })
+      .then(function(token){
+        // find the user
+        return db.sequelize
+          .query(`SELECT * FROM users WHERE id = :id LIMIT 1;`, {
+            replacements: {
+              id: token.user_id
+            },
+            type: db.sequelize.QueryTypes.SELECT
+          });
+      })
+      .then(function(users){
+        if(!users.length){
+          throw({
+            status: 404,
+            errors: ['users not found']
+          });
+          return null;
+        }
+        return users[0];
+      })
+      .then(function(user){
+        // compare the passwords
+        return bcrypt
+          .compare(args.old_password, user.password_hash)
+          .then(function(match){
+            if(!match){
+              throw({
+                status: 403,
+                errors: ['incorrect password']
+              });
+              return null;
+            }
+            return user;
+          });
+      })
+      .then(function(user){
+        return bcrypt.hash(args.password, 10)
+          .then(function(hash){
+            return db.sequelize
+              .query(`UPDATE users SET password_hash = :password_hash WHERE id = :id`, {
+                replacements: {
+                  id: user.id,
+                  password_hash: hash
+                }
+              });
+          })
+          .then(function(){
+            res.json({
+              success: true
+            })
+          });
       })
       .catch(function(err){
         var status = err.status || 500;

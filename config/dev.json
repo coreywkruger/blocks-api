@@ -1,0 +1,16 @@
+{
+  "api": {
+    "port": "8888",
+    "private_key": "123supersecret"
+  },
+  "db": {
+    "connection": "postgres://db:db@db:5432/blocks"
+  },
+  "signup": {
+    "address": "blocksapi@gmail.com",
+    "password": "temporary",
+    "invite_url": "http://localhost:4001/#/signup",
+    "reset_password_url": "http://localhost:4001/#/password-reset",
+    "private_key": "123supersecret"
+  }
+}

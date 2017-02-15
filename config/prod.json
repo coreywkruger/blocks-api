@@ -9,7 +9,8 @@
   "signup": {
     "address": "blocksapi@gmail.com",
     "password": "temporary",
-    "invite_url": "http://localhost:4001/#/signup",
+    "invite_url": "http://45.79.101.197:8080/#/signup",
+    "reset_password_url": "http://45.79.101.197:8080/#/password-reset",
     "private_key": "123supersecret"
   }
 }

@@ -6,7 +6,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # command: entrypoint-api.sh
+    command: node index.js
+    env:
+      - CONFIG=./config/dev.json
     ports:
       - "8888:8888"
     volumes:

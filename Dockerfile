@@ -9,4 +9,7 @@ EXPOSE 8888
 
 COPY . /opt/app
 
+ARG CONFIG
+ENV CONFIG ${CONFIG}
+
 CMD ["./entrypoint-api.sh"]
